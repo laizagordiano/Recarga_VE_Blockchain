@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  empresa-a:
+    build:
+      context: ./empresa-a
+    ports:
+      - "8081:8081"
+    container_name: empresa_a
+
+  empresa-b:
+    build:
+      context: ./empresa-b
+    ports:
+      - "8082:8082"
+    container_name: empresa_b
+
+  empresa-c:
+    build:
+      context: ./empresa-c
+    ports:
+      - "8083:8083"
+    container_name: empresa_c
