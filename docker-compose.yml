@@ -1,23 +1,26 @@
 version: "3.9"
 
 services:
-  empresa-a:
+  empresa_a:
     build:
-      context: ./empresa-a
+      context: .
+      dockerfile: empresa_a/Dockerfile
     ports:
       - "8081:8081"
     container_name: empresa_a
 
-  empresa-b:
+  empresa_b:
     build:
-      context: ./empresa-b
+      context: .
+      dockerfile: empresa_b/Dockerfile
     ports:
       - "8082:8082"
     container_name: empresa_b
 
-  empresa-c:
+  empresa_c:
     build:
-      context: ./empresa-c
+      context: .
+      dockerfile: empresa_c/Dockerfile
     ports:
       - "8083:8083"
     container_name: empresa_c
