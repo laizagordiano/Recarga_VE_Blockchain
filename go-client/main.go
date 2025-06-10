@@ -7,7 +7,7 @@ import (
 	"math/big"
 	"os"
 
-	"recargas/recarga"
+	"github.com/laizagordiano/Recarga_VE_Blockchain/recarga"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/crypto"
