@@ -100,6 +100,29 @@ func (b *BlockchainService) FinalizarSessao(id *big.Int, energiaConsumida *big.I
 	return nil
 }
 
+// Recarga chama o método recarga do contrato para adicionar energia a uma sessão aberta
+func (b *BlockchainService) Recarga(id *big.Int, energiaAdicional *big.Int) error {
+	preco, err := b.contract.PrecoPorKWh(&bind.CallOpts{})
+	if err != nil {
+		return err
+	}
+	valor := new(big.Int).Mul(energiaAdicional, preco)
+	b.auth.Value = valor
+	// Substitua "AdicionarEnergia" pelo nome correto do método gerado pelo abigen para adicionar energia.
+	tx, err := b.contract.Recarga(b.auth, id, energiaAdicional)
+	if err != nil {
+		return err
+	}
+	receipt, err := bind.WaitMined(context.Background(), b.client, tx)
+	if err != nil {
+		return err
+	}
+	if receipt.Status != 1 {
+		return errors.New("transação de recarga falhou")
+	}
+	return nil
+}
+
 // GetSessao retorna os dados de uma sessão pelo ID
 func (b *BlockchainService) GetSessao(id *big.Int) (usuario common.Address, energiaConsumida, valorPago *big.Int, finalizada bool, err error) {
 	sessao, err := b.contract.Sessoes(&bind.CallOpts{}, id)

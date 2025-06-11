@@ -92,3 +92,29 @@ func BlockchainSessao(c *gin.Context) {
 		"finalizada":       finalizada,
 	})
 }
+
+// POST /blockchain/recarga
+func BlockchainRecarga(c *gin.Context) {
+	if blockchainInitErr != nil || blockchainService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"erro": "BlockchainService não inicializado: " + blockchainInitErr.Error()})
+		return
+	}
+	var req struct {
+		IDSessao         string `json:"idSessao"`
+		EnergiaAdicional string `json:"energiaAdicional"`
+	}
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"erro": "Formato inválido"})
+		return
+	}
+	id := new(big.Int)
+	id.SetString(req.IDSessao, 10)
+	energia := new(big.Int)
+	energia.SetString(req.EnergiaAdicional, 10)
+	err := blockchainService.Recarga(id, energia)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"erro": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"mensagem": "Recarga parcial realizada na blockchain"})
+}
