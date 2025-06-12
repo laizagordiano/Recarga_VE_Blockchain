@@ -1,4 +1,4 @@
-x	services:
+services:
   blockchain:
     build:
       context: .
