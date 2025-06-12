@@ -59,6 +59,7 @@ func NewBlockchainService() (*BlockchainService, error) {
 
 // IniciarSessao chama o método iniciarSessao do contrato
 func (b *BlockchainService) IniciarSessao() (*big.Int, error) {
+	b.auth.Value = big.NewInt(0) // Garante que não envia valor para função não-payable
 	tx, err := b.contract.IniciarSessao(b.auth)
 	if err != nil {
 		return nil, err
