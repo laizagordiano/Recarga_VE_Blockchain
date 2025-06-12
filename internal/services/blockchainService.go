@@ -59,7 +59,7 @@ func NewBlockchainService() (*BlockchainService, error) {
 
 // ReservarSessao chama o método reservarSessao do contrato
 func (b *BlockchainService) ReservarSessao() (*big.Int, error) {
-	tx, err := b.contract.ReservarSessao(b.auth)
+	tx, err := b.contract.IniciarSessao(b.auth)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,8 @@ func (b *BlockchainService) ReservarSessao() (*big.Int, error) {
 
 // RecarregarSessao chama o método recarregarSessao do contrato
 func (b *BlockchainService) RecarregarSessao(id, energia *big.Int) error {
-	tx, err := b.contract.RecarregarSessao(b.auth, id, energia)
+	raw := &recarga.RecargaRaw{Contract: b.contract}
+	tx, err := raw.Transact(b.auth, "recarregarSessao", id, energia)
 	if err != nil {
 		return err
 	}
