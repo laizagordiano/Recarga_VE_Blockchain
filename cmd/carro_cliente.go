@@ -112,7 +112,7 @@ func main() {
 		return
 	}
 
-	// 5. Simular viagem em partes e finalizar/pagar cada sessão na blockchain
+	// 5. Simular viagem em partes e recarregar/finalizar cada sessão na blockchain
 	bateria := 100    // porcentagem inicial da bateria
 	consumoPorKm := 2 // consumo de bateria por km em %
 	fmt.Println("\nIniciando a viagem...")
@@ -143,22 +143,42 @@ func main() {
 			bateria = 0
 		}
 
-		// Finalizar/pagar sessão na blockchain
+		// Recarregar energia na sessão
 		idSessao := sessoes[i]
 		energiaConsumida := consumoTrecho // pode ser ajustado conforme lógica real
-		body := fmt.Sprintf(`{"idSessao":"%s","energiaConsumida":"%d"}`, idSessao, energiaConsumida)
-		resp, err := http.Post(servidor+"/blockchain/finalizar", "application/json", strings.NewReader(body))
+		bodyRecarregar := fmt.Sprintf(`{"idSessao":"%s","energia":"%d"}`, idSessao, energiaConsumida)
+		reqRec, _ := http.NewRequest("POST", servidor+"/blockchain/recarregar", strings.NewReader(bodyRecarregar))
+		reqRec.Header.Set("Content-Type", "application/json")
+		respRec, err := http.DefaultClient.Do(reqRec)
+		if err != nil {
+			fmt.Printf("Erro ao recarregar sessão %s: %v\n", idSessao, err)
+			continue
+		}
+		var resRec map[string]interface{}
+		json.NewDecoder(respRec.Body).Decode(&resRec)
+		respRec.Body.Close()
+		if _, ok := resRec["mensagem"]; ok {
+			fmt.Printf("Energia recarregada na sessão %s!\n", idSessao)
+		} else {
+			fmt.Printf("Falha ao recarregar sessão %s: %v\n", idSessao, resRec["erro"])
+		}
+
+		// Finalizar/pagar sessão na blockchain
+		bodyFinalizar := fmt.Sprintf(`{"idSessao":"%s"}`, idSessao)
+		reqFin, _ := http.NewRequest("POST", servidor+"/blockchain/finalizar", strings.NewReader(bodyFinalizar))
+		reqFin.Header.Set("Content-Type", "application/json")
+		respFin, err := http.DefaultClient.Do(reqFin)
 		if err != nil {
 			fmt.Printf("Erro ao finalizar sessão %s: %v\n", idSessao, err)
 			continue
 		}
-		var res map[string]interface{}
-		json.NewDecoder(resp.Body).Decode(&res)
-		resp.Body.Close()
-		if _, ok := res["mensagem"]; ok {
+		var resFin map[string]interface{}
+		json.NewDecoder(respFin.Body).Decode(&resFin)
+		respFin.Body.Close()
+		if _, ok := resFin["mensagem"]; ok {
 			fmt.Printf("Pagamento efetivado na blockchain! Chegou em %s! Bateria restante: %d%%\n", destino, bateria)
 		} else {
-			fmt.Printf("Falha ao finalizar sessão %s: %v\n", idSessao, res["erro"])
+			fmt.Printf("Falha ao finalizar sessão %s: %v\n", idSessao, resFin["erro"])
 		}
 		if bateria == 0 {
 			fmt.Println("Bateria esgotada! Viagem encerrada.")

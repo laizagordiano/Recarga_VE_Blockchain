@@ -20,6 +20,7 @@ func ConfigurarRotas(router *gin.Engine) {
 	// --- ENDPOINTS RECOMENDADOS PARA PRODUÇÃO ---
 	// Blockchain: máxima transparência, segurança e auditabilidade
 	router.POST("/blockchain/reservar", controllers.BlockchainReservar)   // inicia sessão (reserva) na blockchain
+	router.POST("/blockchain/recarregar", controllers.BlockchainRecarregar) // recarrega energia na sessão
 	router.POST("/blockchain/finalizar", controllers.BlockchainFinalizar) // finaliza sessão/pagamento na blockchain
 	router.GET("/blockchain/historico", controllers.BlockchainHistorico)  // histórico de sessões/pagamentos
 	router.GET("/blockchain/sessao/:id", controllers.BlockchainSessao)    // detalhes de uma sessão

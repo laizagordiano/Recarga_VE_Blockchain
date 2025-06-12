@@ -23,12 +23,38 @@ func BlockchainReservar(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"erro": "BlockchainService não inicializado: " + blockchainInitErr.Error()})
 		return
 	}
-	id, err := blockchainService.IniciarSessao()
+	id, err := blockchainService.ReservarSessao()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"erro": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"idSessao": id.String()})
+}
+
+// POST /blockchain/recarregar
+func BlockchainRecarregar(c *gin.Context) {
+	if blockchainInitErr != nil || blockchainService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"erro": "BlockchainService não inicializado: " + blockchainInitErr.Error()})
+		return
+	}
+	var req struct {
+		IDSessao string `json:"idSessao"`
+		Energia  string `json:"energia"`
+	}
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"erro": "Formato inválido"})
+		return
+	}
+	id := new(big.Int)
+	id.SetString(req.IDSessao, 10)
+	energia := new(big.Int)
+	energia.SetString(req.Energia, 10)
+	err := blockchainService.RecarregarSessao(id, energia)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"erro": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"mensagem": "Energia recarregada na sessão"})
 }
 
 // POST /blockchain/finalizar
@@ -38,8 +64,7 @@ func BlockchainFinalizar(c *gin.Context) {
 		return
 	}
 	var req struct {
-		IDSessao         string `json:"idSessao"`
-		EnergiaConsumida string `json:"energiaConsumida"`
+		IDSessao string `json:"idSessao"`
 	}
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"erro": "Formato inválido"})
@@ -47,9 +72,7 @@ func BlockchainFinalizar(c *gin.Context) {
 	}
 	id := new(big.Int)
 	id.SetString(req.IDSessao, 10)
-	energia := new(big.Int)
-	energia.SetString(req.EnergiaConsumida, 10)
-	err := blockchainService.FinalizarSessao(id, energia)
+	err := blockchainService.FinalizarSessao(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"erro": err.Error()})
 		return

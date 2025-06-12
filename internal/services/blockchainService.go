@@ -14,7 +14,7 @@ import (
 )
 
 // BlockchainService encapsula a lógica de interação com o contrato inteligente
-// Fornece métodos para iniciar/finalizar sessões e consultar histórico
+// Fornece métodos para reservar, recarregar, finalizar sessões e consultar histórico
 
 type BlockchainService struct {
 	client      *ethclient.Client
@@ -57,9 +57,9 @@ func NewBlockchainService() (*BlockchainService, error) {
 	return &BlockchainService{client, contract, fromAddress, auth}, nil
 }
 
-// IniciarSessao chama o método iniciarSessao do contrato
-func (b *BlockchainService) IniciarSessao() (*big.Int, error) {
-	tx, err := b.contract.IniciarSessao(b.auth)
+// ReservarSessao chama o método reservarSessao do contrato
+func (b *BlockchainService) ReservarSessao() (*big.Int, error) {
+	tx, err := b.contract.ReservarSessao(b.auth)
 	if err != nil {
 		return nil, err
 	}
@@ -68,9 +68,8 @@ func (b *BlockchainService) IniciarSessao() (*big.Int, error) {
 		return nil, err
 	}
 	if receipt.Status != 1 {
-		return nil, errors.New("transação de iniciarSessao falhou")
+		return nil, errors.New("transação de reservarSessao falhou")
 	}
-	// O ID da sessão é retornado pelo evento ou pelo contador
 	contador, err := b.contract.Contador(&bind.CallOpts{})
 	if err != nil {
 		return nil, err
@@ -78,15 +77,35 @@ func (b *BlockchainService) IniciarSessao() (*big.Int, error) {
 	return new(big.Int).Sub(contador, big.NewInt(1)), nil // O último ID criado
 }
 
+// RecarregarSessao chama o método recarregarSessao do contrato
+func (b *BlockchainService) RecarregarSessao(id, energia *big.Int) error {
+	tx, err := b.contract.RecarregarSessao(b.auth, id, energia)
+	if err != nil {
+		return err
+	}
+	receipt, err := bind.WaitMined(context.Background(), b.client, tx)
+	if err != nil {
+		return err
+	}
+	if receipt.Status != 1 {
+		return errors.New("transação de recarregarSessao falhou")
+	}
+	return nil
+}
+
 // FinalizarSessao chama o método finalizarSessao do contrato
-func (b *BlockchainService) FinalizarSessao(id *big.Int, energiaConsumida *big.Int) error {
+func (b *BlockchainService) FinalizarSessao(id *big.Int) error {
+	sessao, err := b.contract.Sessoes(&bind.CallOpts{}, id)
+	if err != nil {
+		return err
+	}
 	preco, err := b.contract.PrecoPorKWh(&bind.CallOpts{})
 	if err != nil {
 		return err
 	}
-	valor := new(big.Int).Mul(energiaConsumida, preco)
+	valor := new(big.Int).Mul(sessao.EnergiaConsumida, preco)
 	b.auth.Value = valor
-	tx, err := b.contract.FinalizarSessao(b.auth, id, energiaConsumida)
+	tx, err := b.contract.FinalizarSessao(b.auth, id, sessao.EnergiaConsumida)
 	if err != nil {
 		return err
 	}
@@ -97,6 +116,7 @@ func (b *BlockchainService) FinalizarSessao(id *big.Int, energiaConsumida *big.I
 	if receipt.Status != 1 {
 		return errors.New("transação de finalizarSessao falhou")
 	}
+	b.auth.Value = big.NewInt(0) // Limpa valor para próximas transações
 	return nil
 }
 

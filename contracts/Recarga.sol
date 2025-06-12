@@ -17,27 +17,39 @@ contract RecargaVE {
 
     // Evento emitido ao finalizar uma recarga
     event RecargaFinalizada(uint256 id, address usuario, uint256 energia, uint256 valor);
+    // Evento emitido ao recarregar energia
+    event EnergiaRecarregada(uint256 id, address usuario, uint256 energiaTotal);
 
-    // Função para iniciar uma nova sessão de recarga
+    // Função para iniciar uma nova sessão de recarga (reserva)
+    function reservarSessao() public returns (uint256) {
+        uint256 id = contador++;
+        sessoes[id] = Sessao(msg.sender, 0, 0, false);
+        return id;
+    }
+
+    // Função antiga para compatibilidade (opcional)
     function iniciarSessao() external returns (uint256) {
-        uint256 id = contador++; // Gera um novo ID de sessão
-        sessoes[id] = Sessao(msg.sender, 0, 0, false); // Cria a sessão para o usuário
-        return id; // Retorna o ID da nova sessão
+        return this.reservarSessao();
+    }
+
+    // Função para recarregar energia em uma sessão (pode ser chamada múltiplas vezes antes de finalizar)
+    function recarregarSessao(uint256 id, uint256 energia) external {
+        Sessao storage s = sessoes[id];
+        require(s.usuario == msg.sender, unicode"Não autorizado");
+        require(!s.finalizada, unicode"Sessão já finalizada");
+        s.energiaConsumida += energia;
+        emit EnergiaRecarregada(id, msg.sender, s.energiaConsumida);
     }
 
     // Função para finalizar uma sessão de recarga e efetuar o pagamento
-    function finalizarSessao(uint256 id, uint256 energiaConsumida) external payable {
-        Sessao storage s = sessoes[id]; // Obtém a sessão pelo ID
-        require(s.usuario == msg.sender, unicode"Não autorizado"); // Garante que só o dono pode finalizar
-        require(!s.finalizada, unicode"Já finalizada"); // Garante que a sessão não foi finalizada antes
-
-        uint256 valor = energiaConsumida * precoPorKWh; // Calcula o valor a ser pago
-        require(msg.value >= valor, "Pagamento insuficiente"); // Verifica se o pagamento é suficiente
-
-        s.energiaConsumida = energiaConsumida; // Atualiza a energia consumida
-        s.valorPago = msg.value; // Registra o valor pago
-        s.finalizada = true; // Marca a sessão como finalizada
-
-        emit RecargaFinalizada(id, msg.sender, energiaConsumida, msg.value); // Emite o evento de finalização
+    function finalizarSessao(uint256 id) external payable {
+        Sessao storage s = sessoes[id];
+        require(s.usuario == msg.sender, unicode"Não autorizado");
+        require(!s.finalizada, unicode"Já finalizada");
+        uint256 valor = s.energiaConsumida * precoPorKWh;
+        require(msg.value >= valor, "Pagamento insuficiente");
+        s.valorPago = msg.value;
+        s.finalizada = true;
+        emit RecargaFinalizada(id, msg.sender, s.energiaConsumida, msg.value);
     }
 }
