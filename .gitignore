@@ -1,0 +1,13 @@
+# Node
+node_modules/
+cache/
+artifacts/
+
+# Go
+*.exe
+*.test
+*.out
+
+# Misc
+.env
+.DS_Store

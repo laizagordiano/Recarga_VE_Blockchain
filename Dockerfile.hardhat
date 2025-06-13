@@ -1,0 +1,6 @@
+FROM node:18-alpine
+WORKDIR /app
+COPY . .
+RUN npm install --global hardhat && npm install
+EXPOSE 8545
+CMD sh -c 'npx hardhat node --hostname 0.0.0.0 & sleep 8 && npx hardhat run scripits/deploy.js --network localhost && tail -f /dev/null'
