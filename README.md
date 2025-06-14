@@ -99,6 +99,11 @@ CHAIN_ID=31337
 ---
 
 
+## 📝 Relatório
+
+https://docs.google.com/document/d/1375Ks0UCo0UtJo0YpEercYioOJIA_6ZL/edit?usp=sharing&ouid=110915174731788891280&rtpof=true&sd=true
+
+
 ## 📝 Observações
 
 - Cada empresa só pode operar com sua própria chave privada
